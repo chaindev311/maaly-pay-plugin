@@ -1,0 +1,4 @@
+/* Minimal admin styles */
+.maaly-pay-wrap .maaly-iframe-wrap { margin-top: 16px; }
+.maaly-pay-wrap .maaly-pre { background:#f6f7f7; padding:12px; overflow:auto; }
+.maaly-pay-wrap table.form-table th { width: 220px; }

@@ -1,4 +1,12 @@
-/* Minimal admin styles */
+/* Admin & frontend minimal styles */
 .maaly-pay-wrap .maaly-iframe-wrap { margin-top: 16px; }
 .maaly-pay-wrap .maaly-pre { background:#f6f7f7; padding:12px; overflow:auto; }
 .maaly-pay-wrap table.form-table th { width: 220px; }
+
+/* Frontend */
+.maaly-form { max-width: 560px; padding: 12px; border:1px solid #eee; border-radius:8px; }
+.maaly-form input, .maaly-form select { width: 100%; padding: 8px; margin-bottom: 8px; }
+.maaly-form .button, .maaly-form button { padding: 8px 14px; }
+.maaly-table { border-collapse: collapse; }
+.maaly-table th, .maaly-table td { padding: 8px 10px; border: 1px solid #ddd; }
+.maaly-error { background:#ffecec; color:#530; padding:10px; border:1px solid #f5c2c2; border-radius:6px; }

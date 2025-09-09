@@ -18,6 +18,7 @@ class Maaly_Pay_API {
         );
 
         $res = wp_remote_post( $url, $args );
+
         if ( is_wp_error( $res ) ) {
             return array( 'error' => $res->get_error_message() );
         }

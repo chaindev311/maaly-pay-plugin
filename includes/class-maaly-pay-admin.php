@@ -4,167 +4,134 @@ if ( ! defined('ABSPATH') ) { exit; }
 class Maaly_Pay_Admin {
 
     public static function render_create_page() {
-        if ( ! current_user_can('manage_options') ) { return; }
-        $api_key = get_option( Maaly_Pay_Settings::OPTION_KEY, '' );
-        ?>
-        <div class="wrap maaly-pay-wrap">
-            <h1>Maaly Pay — Create Payment Request</h1>
+        if (!current_user_can('manage_options')) return;
 
-            <?php if ( empty( $api_key ) ) : ?>
-                <div class="notice notice-warning"><p><strong>API Key missing.</strong> Go to <a href="<?php echo admin_url('admin.php?page=maaly-pay-settings'); ?>">Settings</a> and save your API key.</p></div>
-            <?php endif; ?>
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_maaly_admin_nonce'])) {
+            if (!wp_verify_nonce($_POST['_maaly_admin_nonce'], 'maaly_admin_create')) {
+                echo '<div class="maaly-error">Nonce verification failed.</div>';
+            } else {
+                $api_key = sanitize_text_field($_POST['apiKey'] ?? '');
+                $merchantId = sanitize_text_field($_POST['merchantId'] ?? '');
+                $fiatAmount = sanitize_text_field($_POST['fiatAmount'] ?? '');
+                $currency = sanitize_text_field($_POST['currency'] ?? '');
+                $description = sanitize_text_field($_POST['description'] ?? '');
+                $merchantTxId = sanitize_text_field($_POST['merchantTxId'] ?? '');
+                $merchantCallback = esc_url_raw($_POST['merchantCallback'] ?? '');
+                $embed = isset($_POST['embed']) ? true : false;
 
-            <form method="post">
-                <?php wp_nonce_field( 'maaly_create_payment', '_maaly_nonce' ); ?>
+                if (empty($api_key)) $api_key = get_option('maaly_api_key', '');
 
-                <table class="form-table" role="presentation">
-                    <tbody>
-                        <tr>
-                            <th scope="row"><label for="merchantId">Merchant ID</label></th>
-                            <td><input name="merchantId" id="merchantId" type="text" class="regular-text" required></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="fiatAmount">Fiat Amount</label></th>
-                            <td><input name="fiatAmount" id="fiatAmount" type="text" class="regular-text" required></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="currency">Currency</label></th>
-                            <td>
-                                <select name="currency" id="currency" required>
-                                    <?php foreach ( maaly_pay_supported_currencies() as $c ) : ?>
-                                        <option value="<?php echo esc_attr($c); ?>"><?php echo esc_html($c); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="description">Description</label></th>
-                            <td><input name="description" id="description" type="text" class="regular-text" required></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="merchantTxId">Merchant Tx ID</label></th>
-                            <td><input name="merchantTxId" id="merchantTxId" type="text" class="regular-text" required></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="merchantCallback">Merchant Callback URL</label></th>
-                            <td><input name="merchantCallback" id="merchantCallback" type="url" class="regular-text code" placeholder="https://example.com/callback" required></td>
-                        </tr>
-                        <tr>
-                            <th scope="row">Open Checkout</th>
-                            <td>
-                                <label><input type="radio" name="open_mode" value="newtab" checked> Open in new tab</label>
-                                <label style="margin-left: 1rem;"><input type="radio" name="open_mode" value="iframe"> Embed in iframe</label>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                $payload = [
+                    'merchantId' => $merchantId,
+                    'fiatAmount' => $fiatAmount,
+                    'currency' => $currency,
+                    'description' => $description,
+                    'merchantTxId' => $merchantTxId,
+                    'merchantCallback' => $merchantCallback,
+                ];
 
-                <?php submit_button( 'Create Payment', 'primary', 'maaly_create_payment' ); ?>
-            </form>
+                $res = Maaly_Pay_API::create_payment_request($payload, $api_key);
 
-            <?php
-            if ( isset($_POST['maaly_create_payment']) && check_admin_referer('maaly_create_payment', '_maaly_nonce') ) {
-                $payload = array(
-                    'merchantId'      => absint( $_POST['merchantId'] ?? 0 ),
-                    'fiatAmount'      => sanitize_text_field( $_POST['fiatAmount'] ?? '' ),
-                    'currency'        => sanitize_text_field( $_POST['currency'] ?? '' ),
-                    'description'     => sanitize_text_field( $_POST['description'] ?? '' ),
-                    'merchantTxId'    => sanitize_text_field( $_POST['merchantTxId'] ?? '' ),
-                    'merchantCallback'=> esc_url_raw( $_POST['merchantCallback'] ?? '' ),
-                );
-
-                if ( empty($api_key) ) {
-                    echo '<div class="notice notice-error"><p>API key is required. Save it in Settings first.</p></div>';
+                if (isset($res['CheckoutUrl'])) {
+                    echo '<div class="maaly-success">Payment request created.</div>';
+                    $url = esc_url($res['CheckoutUrl']);
+                    echo '<p><a href="' . $url . '" target="_blank" class="button">Open Checkout in New Tab</a></p>';
+                    if ($embed) {
+                        echo '<div class="maaly-iframe-wrap"><iframe src="' . $url . '" style="width:100%;height:600px;border:1px solid #ddd;"></iframe></div>';
+                    }
                 } else {
-                    $res = Maaly_Pay_API::create_payment_request( $payload, $api_key );
-
-                    if ( isset($res['error']) ) {
-                        echo '<div class="notice notice-error"><p><strong>Error:</strong> ' . esc_html($res['error']) . '</p></div>';
-                        if ( isset($res['status']) ) {
-                            echo '<p>Status Code: ' . esc_html($res['status']) . '</p>';
-                        }
-                        if ( isset($res['raw']) ) {
-                            echo '<pre class="maaly-pre">'; print_r($res['raw']); echo '</pre>';
-                        }
-                    } else {
-                        $checkout = $res['CheckoutUrl'];
-                        echo '<div class="notice notice-success"><p>Payment request created.</p></div>';
-                        echo '<div class="notice notice-success"><p>Checkout URL: ' . esc_url($checkout) . '</p></div>';
-                        echo '<p><a class="button button-secondary" target="_blank" href="' . esc_url($checkout) . '">Open Checkout in New Tab</a></p>';
-
-                        $open_mode = sanitize_text_field( $_POST['open_mode'] ?? 'iframe' );
-                        if ( $open_mode === 'iframe' ) {
-                            echo '<div class="maaly-iframe-wrap"><iframe src="' . esc_url($checkout) . '" width="100%" height="650" loading="lazy"></iframe></div>';
-                            echo '<p class="description">If the page does not load, your browser or the remote site may block iframes. Use the "Open in New Tab" button above.</p>';
-                        }
+                    echo '<div class="maaly-error">Error: ' . esc_html($res['error'] ?? 'Unknown error') . '</div>';
+                    if (isset($res['raw'])) {
+                        echo '<pre class="maaly-pre">' . esc_html(json_encode($res['raw'], JSON_PRETTY_PRINT)) . '</pre>';
                     }
                 }
             }
-            ?>
+        }
+
+        $currencies = maaly_pay_supported_currencies();
+
+        ?>
+        <div class="wrap maaly-pay-wrap">
+            <h1>Create Maaly Payment Request</h1>
+            <form method="POST">
+                <?php wp_nonce_field('maaly_admin_create', '_maaly_admin_nonce'); ?>
+                <table class="form-table">
+                    <tr>
+                        <th>API Key (optional)</th>
+                        <td><input type="text" name="apiKey" class="regular-text" value="" /></td>
+                    </tr>
+                    <tr>
+                        <th>Merchant ID</th>
+                        <td><input type="text" name="merchantId" class="regular-text" value="" required/></td>
+                    </tr>
+                    <tr>
+                        <th>Fiat Amount</th>
+                        <td><input type="text" name="fiatAmount" class="regular-text" value="" required/></td>
+                    </tr>
+                    <tr>
+                        <th>Currency</th>
+                        <td>
+                            <select name="currency">
+                                <?php foreach($currencies as $c): ?>
+                                    <option value="<?php echo esc_attr($c); ?>"><?php echo esc_html($c); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Description</th>
+                        <td><input type="text" name="description" class="regular-text" value="" /></td>
+                    </tr>
+                    <tr>
+                        <th>Merchant Tx ID</th>
+                        <td><input type="text" name="merchantTxId" class="regular-text" value="tx-<?php echo time(); ?>" /></td>
+                    </tr>
+                    <tr>
+                        <th>Merchant Callback</th>
+                        <td><input type="url" name="merchantCallback" class="regular-text" value="" /></td>
+                    </tr>
+                    <tr>
+                        <th>Embed in iframe</th>
+                        <td><input type="checkbox" name="embed" value="1" /></td>
+                    </tr>
+                </table>
+                <p><button type="submit" class="button button-primary">Create Payment</button></p>
+            </form>
         </div>
         <?php
     }
 
     public static function render_status_page() {
-        if ( ! current_user_can('manage_options') ) { return; }
-        $api_key = get_option( Maaly_Pay_Settings::OPTION_KEY, '' );
+        if (!current_user_can('manage_options')) return;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_maaly_status_nonce'])) {
+            if (!wp_verify_nonce($_POST['_maaly_status_nonce'], 'maaly_admin_status')) {
+                echo '<div class="maaly-error">Nonce verification failed.</div>';
+            } else {
+                $merchant_tx_id = sanitize_text_field($_POST['merchant_tx_id'] ?? '');
+                $api_key = sanitize_text_field($_POST['apiKey'] ?? '');
+                if (empty($api_key)) $api_key = get_option('maaly_api_key', '');
+                $res = Maaly_Pay_API::check_transaction_status($merchant_tx_id, $api_key);
+                echo '<pre class="maaly-pre">' . esc_html(json_encode($res, JSON_PRETTY_PRINT)) . '</pre>';
+            }
+        }
         ?>
         <div class="wrap maaly-pay-wrap">
-            <h1>Maaly Pay — Check Transaction Status</h1>
-
-            <?php if ( empty( $api_key ) ) : ?>
-                <div class="notice notice-warning"><p><strong>API Key missing.</strong> Go to <a href="<?php echo admin_url('admin.php?page=maaly-pay-settings'); ?>">Settings</a> and save your API key.</p></div>
-            <?php endif; ?>
-
-            <form method="post">
-                <?php wp_nonce_field( 'maaly_check_status', '_maaly_nonce' ); ?>
-
-                <table class="form-table" role="presentation">
-                    <tbody>
-                        <tr>
-                            <th scope="row"><label for="merchant_tx_id">Merchant Tx ID</label></th>
-                            <td><input name="merchant_tx_id" id="merchant_tx_id" type="text" class="regular-text" required></td>
-                        </tr>
-                    </tbody>
+            <h1>Check Payment Status</h1>
+            <form method="POST">
+                <?php wp_nonce_field('maaly_admin_status', '_maaly_status_nonce'); ?>
+                <table class="form-table">
+                    <tr>
+                        <th>API Key (optional)</th>
+                        <td><input type="text" name="apiKey" class="regular-text" value="" /></td>
+                    </tr>
+                    <tr>
+                        <th>Merchant Tx ID</th>
+                        <td><input type="text" name="merchant_tx_id" class="regular-text" value="" required/></td>
+                    </tr>
                 </table>
-
-                <?php submit_button( 'Check Status', 'primary', 'maaly_check_status' ); ?>
+                <p><button type="submit" class="button button-primary">Check Status</button></p>
             </form>
-
-            <?php
-            if ( isset($_POST['maaly_check_status']) && check_admin_referer('maaly_check_status', '_maaly_nonce') ) {
-                $merchant_tx_id = sanitize_text_field( $_POST['merchant_tx_id'] ?? '' );
-
-                if ( empty($api_key) ) {
-                    echo '<div class="notice notice-error"><p>API key is required. Save it in Settings first.</p></div>';
-                } else {
-                    $res = Maaly_Pay_API::check_transaction_status( $merchant_tx_id, $api_key );
-
-                    if ( isset($res['error']) ) {
-                        echo '<div class="notice notice-error"><p><strong>Error:</strong> ' . esc_html($res['error']) . '</p></div>';
-                        if ( isset($res['status']) ) {
-                            echo '<p>Status Code: ' . esc_html($res['status']) . '</p>';
-                        }
-                        if ( isset($res['raw']) ) {
-                            echo '<pre class="maaly-pre">'; print_r($res['raw']); echo '</pre>';
-                        }
-                    } else {
-                        $filledAmount = isset($res['filledAmount']) ? $res['filledAmount'] : '—';
-                        $requestedAmount = isset($res['requestedAmount']) ? $res['requestedAmount'] : '—';
-                        $status = isset($res['status']) ? ( $res['status'] ? '✅ Completed' : '⏳ Pending/Failed' ) : 'Unknown';
-
-                        echo '<h2>Result</h2>';
-                        echo '<table class="widefat striped" style="max-width:600px">';
-                        echo '<tbody>';
-                        echo '<tr><th scope="row">Filled Amount</th><td>' . esc_html($filledAmount) . '</td></tr>';
-                        echo '<tr><th scope="row">Requested Amount</th><td>' . esc_html($requestedAmount) . '</td></tr>';
-                        echo '<tr><th scope="row">Status</th><td>' . esc_html($status) . '</td></tr>';
-                        echo '</tbody>';
-                        echo '</table>';
-                    }
-                }
-            }
-            ?>
         </div>
         <?php
     }

@@ -1,17 +1,16 @@
 <?php
 /*
-Plugin Name: Maaly Pay Integration
+Plugin Name: Maaly Pay
 Description: Accept cryptocurrency payments via Maaly Pay API (custom, no WooCommerce required).
 Version: 1.0.0
 Author: 
 Plugin URI: 
 Requires at least: 5.2
-Tested up to: 6.6
+Tested up to: 6.8
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: maaly-pay
-Domain Path: /languages
 */
 
 if (! defined('ABSPATH')) {
@@ -23,10 +22,7 @@ define('MAALY_PAY_PLUGIN_FILE', __FILE__);
 define('MAALY_PAY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MAALY_PAY_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// Load translations
-add_action('plugins_loaded', function () {
-    load_plugin_textdomain('maaly-pay', false, dirname(plugin_basename(__FILE__)) . '/languages');
-});
+// Note: Since WP 4.6 on WordPress.org, translations load automatically. No manual loader needed.
 
 // Includes
 require_once MAALY_PAY_PLUGIN_DIR . 'includes/currencies.php';

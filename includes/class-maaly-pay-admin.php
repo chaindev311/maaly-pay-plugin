@@ -18,7 +18,10 @@ class Maaly_Pay_Admin
 
             <?php if (empty($api_key)) : ?>
                 <div class="notice notice-warning">
-                    <p><strong><?php echo esc_html__('API Key missing.', 'maaly-pay'); ?></strong> <?php echo wp_kses_post(sprintf(__('Go to %s and save your API key.', 'maaly-pay'), '<a href="' . esc_url(admin_url('admin.php?page=maaly-pay-settings')) . '">' . esc_html__('Settings', 'maaly-pay') . '</a>')); ?></p>
+                    <p><strong><?php echo esc_html__('API Key missing.', 'maaly-pay'); ?></strong>
+                        <?php // translators: %s: link to the Settings page 
+                        ?>
+                        <?php echo wp_kses_post(sprintf(__('Go to %s and save your API key.', 'maaly-pay'), '<a href="' . esc_url(admin_url('admin.php?page=maaly-pay-settings')) . '">' . esc_html__('Settings', 'maaly-pay') . '</a>')); ?></p>
                 </div>
             <?php endif; ?>
 
@@ -125,7 +128,10 @@ class Maaly_Pay_Admin
 
             <?php if (empty($api_key)) : ?>
                 <div class="notice notice-warning">
-                    <p><strong><?php echo esc_html__('API Key missing.', 'maaly-pay'); ?></strong> <?php echo wp_kses_post(sprintf(__('Go to %s and save your API key.', 'maaly-pay'), '<a href="' . esc_url(admin_url('admin.php?page=maaly-pay-settings')) . '">' . esc_html__('Settings', 'maaly-pay') . '</a>')); ?></p>
+                    <p><strong><?php echo esc_html__('API Key missing.', 'maaly-pay'); ?></strong>
+                        <?php // translators: %s: link to the Settings page 
+                        ?>
+                        <?php echo wp_kses_post(sprintf(__('Go to %s and save your API key.', 'maaly-pay'), '<a href="' . esc_url(admin_url('admin.php?page=maaly-pay-settings')) . '">' . esc_html__('Settings', 'maaly-pay') . '</a>')); ?></p>
                 </div>
             <?php endif; ?>
 

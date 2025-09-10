@@ -1,8 +1,8 @@
-=== Maaly Pay Integration ===
+=== Maaly Pay ===
 Contributors: maaly
 Tags: payments, crypto, maaly pay
 Requires at least: 5.2
-Tested up to: 6.6
+Tested up to: 6.8
 Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -28,7 +28,7 @@ This plugin sends the following data from your site’s admin to the Maaly Pay A
 No personal data is stored locally by this plugin other than the API key option you provide. If you need to remove the stored API key, deactivating and deleting the plugin will remove it.
 
 Suggested text for your site privacy policy:
-"This site uses the Maaly Pay Integration plugin to create cryptocurrency payment requests. When an administrator creates a payment, the site sends merchant and payment request details to the Maaly Pay service (`maalyportal.com`) to generate a checkout URL. No customer personal data is processed by the plugin."
+"This site uses the Maaly Pay plugin to create cryptocurrency payment requests. When an administrator creates a payment, the site sends merchant and payment request details to the Maaly Pay service (`maalyportal.com`) to generate a checkout URL. No customer personal data is processed by the plugin."
 
 == Installation ==
 1. Upload the ZIP via Plugins → Add New → Upload Plugin.

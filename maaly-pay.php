@@ -33,7 +33,7 @@ require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-admin.php';
 add_action('admin_enqueue_scripts', function ($hook) {
     $screen = function_exists('get_current_screen') ? get_current_screen() : null;
     $is_maaly = false;
-    if (isset($_GET['page']) && strpos(sanitize_text_field($_GET['page']), 'maaly-pay') !== false) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    if (isset($_GET['page']) && strpos(sanitize_text_field(wp_unslash($_GET['page'])), 'maaly-pay') !== false) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $is_maaly = true;
     }
     if ($screen && strpos($screen->id, 'maaly-pay') !== false) {

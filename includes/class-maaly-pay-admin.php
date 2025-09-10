@@ -76,12 +76,12 @@ class Maaly_Pay_Admin
             <?php
             if (isset($_POST['maaly_create_payment']) && check_admin_referer('maaly_create_payment', '_maaly_nonce')) {
                 $payload = array(
-                    'merchantId'      => absint($_POST['merchantId'] ?? 0),
-                    'fiatAmount'      => sanitize_text_field($_POST['fiatAmount'] ?? ''),
-                    'currency'        => sanitize_text_field($_POST['currency'] ?? ''),
-                    'description'     => sanitize_text_field($_POST['description'] ?? ''),
-                    'merchantTxId'    => sanitize_text_field($_POST['merchantTxId'] ?? ''),
-                    'merchantCallback' => esc_url_raw($_POST['merchantCallback'] ?? ''),
+                    'merchantId'      => absint(isset($_POST['merchantId']) ? wp_unslash($_POST['merchantId']) : 0),
+                    'fiatAmount'      => sanitize_text_field(isset($_POST['fiatAmount']) ? wp_unslash($_POST['fiatAmount']) : ''),
+                    'currency'        => sanitize_text_field(isset($_POST['currency']) ? wp_unslash($_POST['currency']) : ''),
+                    'description'     => sanitize_text_field(isset($_POST['description']) ? wp_unslash($_POST['description']) : ''),
+                    'merchantTxId'    => sanitize_text_field(isset($_POST['merchantTxId']) ? wp_unslash($_POST['merchantTxId']) : ''),
+                    'merchantCallback' => esc_url_raw(isset($_POST['merchantCallback']) ? wp_unslash($_POST['merchantCallback']) : ''),
                 );
 
                 if (empty($api_key)) {
@@ -95,7 +95,7 @@ class Maaly_Pay_Admin
                             echo '<p>' . esc_html__('Status Code:', 'maaly-pay') . ' ' . esc_html($res['status']) . '</p>';
                         }
                         if (isset($res['raw'])) {
-                            echo '<pre class="maaly-pre">' . esc_html(print_r($res['raw'], true)) . '</pre>';
+                            echo '<pre class="maaly-pre">' . esc_html(wp_json_encode($res['raw'])) . '</pre>';
                         }
                     } else {
                         $checkout = $res['CheckoutUrl'];
@@ -103,7 +103,7 @@ class Maaly_Pay_Admin
                         echo '<div class="notice notice-success"><p>' . esc_html__('Checkout URL:', 'maaly-pay') . ' ' . esc_url($checkout) . '</p></div>';
                         echo '<p><a class="button button-secondary" target="_blank" href="' . esc_url($checkout) . '">' . esc_html__('Open Checkout in New Tab', 'maaly-pay') . '</a></p>';
 
-                        $open_mode = sanitize_text_field($_POST['open_mode'] ?? 'iframe');
+                        $open_mode = sanitize_text_field(isset($_POST['open_mode']) ? wp_unslash($_POST['open_mode']) : 'iframe');
                         if ($open_mode === 'iframe') {
                             echo '<div class="maaly-iframe-wrap"><iframe src="' . esc_url($checkout) . '" width="100%" height="650" loading="lazy"></iframe></div>';
                             echo '<p class="description">' . esc_html__('If the page does not load, your browser or the remote site may block iframes. Use the "Open in New Tab" button above.', 'maaly-pay') . '</p>';
@@ -152,7 +152,7 @@ class Maaly_Pay_Admin
 
             <?php
             if (isset($_POST['maaly_check_status']) && check_admin_referer('maaly_check_status', '_maaly_nonce')) {
-                $merchant_tx_id = sanitize_text_field($_POST['merchant_tx_id'] ?? '');
+                $merchant_tx_id = sanitize_text_field(isset($_POST['merchant_tx_id']) ? wp_unslash($_POST['merchant_tx_id']) : '');
 
                 if (empty($api_key)) {
                     echo '<div class="notice notice-error"><p>' . esc_html__('API key is required. Save it in Settings first.', 'maaly-pay') . '</p></div>';
@@ -165,7 +165,7 @@ class Maaly_Pay_Admin
                             echo '<p>' . esc_html__('Status Code:', 'maaly-pay') . ' ' . esc_html($res['status']) . '</p>';
                         }
                         if (isset($res['raw'])) {
-                            echo '<pre class="maaly-pre">' . esc_html(print_r($res['raw'], true)) . '</pre>';
+                            echo '<pre class="maaly-pre">' . esc_html(wp_json_encode($res['raw'])) . '</pre>';
                         }
                     } else {
                         $filledAmount = isset($res['filledAmount']) ? $res['filledAmount'] : '—';

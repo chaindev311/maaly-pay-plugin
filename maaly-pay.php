@@ -3,9 +3,8 @@
 Plugin Name: Maaly Pay Integration
 Description: Accept cryptocurrency payments via Maaly Pay API (custom, no WooCommerce required).
 Version: 1.0.0
-Author: Chain Dev
-Plugin URI: https://maalyportal.com/
-Author URI: https://maalyportal.com/
+Author: 
+Plugin URI: 
 Requires at least: 5.2
 Tested up to: 6.6
 Requires PHP: 7.4

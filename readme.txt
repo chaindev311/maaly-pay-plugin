@@ -1,5 +1,5 @@
 === Maaly Pay ===
-Contributors: maaly
+Contributors: Maaly Dev
 Tags: payments, crypto, maaly pay
 Requires at least: 5.2
 Tested up to: 6.8
@@ -20,6 +20,16 @@ No WooCommerce required.
 This plugin is a SaaS client that connects to the Maaly Pay service to create payment requests and check transaction status. An API key is required.
 
 Service: `https://maalyportal.com/` (see their documentation/terms on that site).
+
+== External services ==
+This plugin connects to the Maaly Pay (MaalyPortal) external API to create payment requests and to check transaction status for those requests.
+
+- What the service is and what it is used for: Maaly Pay's API is used to generate checkout URLs for new payment requests and to verify the status of existing transactions.
+- What data is sent and when:
+  * When you create a payment request from the admin screen, the plugin sends the merchant ID, fiat amount, currency, description, merchant transaction ID, and callback URL to the Maaly Pay API endpoint `https://maalyportal.com/api/omerch/create-payment-request`.
+  * When you check a transaction’s status from the admin screen, the plugin sends the merchant transaction ID to the Maaly Pay API endpoint `https://maalyportal.com/api/omerch/check-online-transaction-merch/{merchant_tx_id}`.
+- Where the data is sent: Requests are sent to Maaly Pay’s API at `https://maalyportal.com/api/omerch`.
+- Terms and Privacy: Please review Maaly Pay’s Terms of Service and Privacy Policy before use: Terms `https://maalyportal.com/terms-conditions`, Privacy `https://maalyportal.com/privacy-policy`.
 
 == Privacy ==
 This plugin sends the following data from your site’s admin to the Maaly Pay API when you use it:

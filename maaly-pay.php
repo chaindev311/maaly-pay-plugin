@@ -29,6 +29,7 @@ require_once MAALY_PAY_PLUGIN_DIR . 'includes/currencies.php';
 require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-api.php';
 require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-settings.php';
 require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-admin.php';
+require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-frontend.php';
 
 add_action('admin_enqueue_scripts', function ($hook) {
     $screen = function_exists('get_current_screen') ? get_current_screen() : null;

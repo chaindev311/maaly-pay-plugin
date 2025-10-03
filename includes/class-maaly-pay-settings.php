@@ -22,11 +22,43 @@ class Maaly_Pay_Settings
             'default' => '',
         ]);
 
+        // New options to save payment default parameters
+        register_setting('maaly_pay_settings', 'maaly_merchant_id', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => '',
+        ]);
+        register_setting('maaly_pay_settings', 'maaly_fiat_amount', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => '',
+        ]);
+        register_setting('maaly_pay_settings', 'maaly_currency', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => 'USD',
+        ]);
+        register_setting('maaly_pay_settings', 'maaly_description', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => '',
+        ]);
+        register_setting('maaly_pay_settings', 'maaly_merchant_callback', [
+            'type' => 'string',
+            'sanitize_callback' => 'esc_url_raw',
+            'default' => '',
+        ]);
+        register_setting('maaly_pay_settings', 'maaly_open_checkout', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => 'newtab',
+        ]);
+
         add_settings_section(
             'maaly_pay_settings_section',
             __('Maaly Pay API Settings', 'maaly-pay'),
             function () {
-                echo '<p>' . esc_html__('Enter your Maaly Pay API key for Bearer authentication.', 'maaly-pay') . '</p>';
+                echo '<p>' . esc_html__('Enter your Maaly Pay API key and default payment parameters.', 'maaly-pay') . '</p>';
             },
             'maaly_pay_settings'
         );
@@ -38,7 +70,56 @@ class Maaly_Pay_Settings
             'maaly_pay_settings',
             'maaly_pay_settings_section'
         );
+
+        add_settings_field(
+            'maaly_merchant_id',
+            __('Merchant ID', 'maaly-pay'),
+            [__CLASS__, 'render_merchant_id_field'],
+            'maaly_pay_settings',
+            'maaly_pay_settings_section'
+        );
+
+        add_settings_field(
+            'maaly_fiat_amount',
+            __('Fiat Amount', 'maaly-pay'),
+            [__CLASS__, 'render_fiat_amount_field'],
+            'maaly_pay_settings',
+            'maaly_pay_settings_section'
+        );
+
+        add_settings_field(
+            'maaly_currency',
+            __('Currency', 'maaly-pay'),
+            [__CLASS__, 'render_currency_field'],
+            'maaly_pay_settings',
+            'maaly_pay_settings_section'
+        );
+
+        add_settings_field(
+            'maaly_description',
+            __('Description', 'maaly-pay'),
+            [__CLASS__, 'render_description_field'],
+            'maaly_pay_settings',
+            'maaly_pay_settings_section'
+        );
+
+        add_settings_field(
+            'maaly_merchant_callback',
+            __('Merchant Callback URL', 'maaly-pay'),
+            [__CLASS__, 'render_merchant_callback_field'],
+            'maaly_pay_settings',
+            'maaly_pay_settings_section'
+        );
+
+        add_settings_field(
+            'maaly_open_checkout',
+            __('Open Checkout', 'maaly-pay'),
+            [__CLASS__, 'render_open_checkout_field'],
+            'maaly_pay_settings',
+            'maaly_pay_settings_section'
+        );
     }
+
 
     public static function render_api_key_field()
     {
@@ -48,6 +129,65 @@ class Maaly_Pay_Settings
             esc_attr(self::OPTION_KEY),
             esc_attr($val)
         );
+    }
+
+    public static function render_merchant_id_field()
+    {
+        $val = get_option('maaly_merchant_id', '');
+        printf(
+            '<input type="text" name="maaly_merchant_id" value="%s" class="regular-text" />',
+            esc_attr($val)
+        );
+    }
+
+    public static function render_fiat_amount_field()
+    {
+        $val = get_option('maaly_fiat_amount', '');
+        printf(
+            '<input type="text" name="maaly_fiat_amount" value="%s" class="regular-text" />',
+            esc_attr($val)
+        );
+    }
+
+    public static function render_currency_field()
+    {
+        $val = get_option('maaly_currency', 'USD');
+        echo '<select name="maaly_currency">';
+        foreach (maaly_pay_supported_currencies() as $c) {
+            printf(
+                '<option value="%1$s" %2$s>%1$s</option>',
+                esc_attr($c),
+                selected($val, $c, false)
+            );
+        }
+        echo '</select>';
+    }
+
+    public static function render_description_field()
+    {
+        $val = get_option('maaly_description', '');
+        printf(
+            '<input type="text" name="maaly_description" value="%s" class="regular-text" />',
+            esc_attr($val)
+        );
+    }
+
+    public static function render_merchant_callback_field()
+    {
+        $val = get_option('maaly_merchant_callback', '');
+        printf(
+            '<input type="url" name="maaly_merchant_callback" value="%s" class="regular-text" placeholder="https://example.com/callback" />',
+            esc_attr($val)
+        );
+    }
+
+    public static function render_open_checkout_field()
+    {
+        $val = get_option('maaly_open_checkout', 'newtab');
+?>
+        <label><input type="radio" name="maaly_open_checkout" value="newtab" <?php checked($val, 'newtab'); ?> /> <?php esc_html_e('Open in new tab', 'maaly-pay'); ?></label><br>
+        <label><input type="radio" name="maaly_open_checkout" value="iframe" <?php checked($val, 'iframe'); ?> /> <?php esc_html_e('Embed in iframe', 'maaly-pay'); ?></label>
+    <?php
     }
 
     public static function menu()
@@ -95,7 +235,7 @@ class Maaly_Pay_Settings
         if (! current_user_can('manage_options')) {
             return;
         }
-?>
+    ?>
         <div class="wrap">
             <h1><?php echo esc_html__('Maaly Pay Settings', 'maaly-pay'); ?></h1>
             <form action="options.php" method="post">

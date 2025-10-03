@@ -1,0 +1,37 @@
+.maaly-pay-wrap button,
+#maaly-pay-frontend button {
+    font-size: 16px;
+    background-color: #0073aa; /* WordPress admin blue */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+    display: inline-block;
+    margin: 0.5em 0;
+    text-align: center;
+}
+
+.maaly-pay-wrap button:hover,
+#maaly-pay-frontend button:hover {
+    background-color: #005177;
+}
+
+#maaly-create-payment-result,
+#maaly-check-status-result {
+    font-size: 16px;
+    margin-top: 1em;
+    line-height: 1.4;
+    font-weight: 400;
+}
+
+#maaly-create-payment-result iframe {
+    margin-top: 1em;
+    border: none;
+    width: 100%;
+    max-width: 600px;
+    height: 650px;
+    display: block;
+}

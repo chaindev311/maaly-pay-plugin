@@ -29,6 +29,7 @@ require_once MAALY_PAY_PLUGIN_DIR . 'includes/currencies.php';
 require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-api.php';
 require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-settings.php';
 require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-admin.php';
+require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-frontend.php';
 
 add_action('admin_enqueue_scripts', function ($hook) {
     $screen = function_exists('get_current_screen') ? get_current_screen() : null;
@@ -44,3 +45,9 @@ add_action('admin_enqueue_scripts', function ($hook) {
         wp_enqueue_script('maaly-pay-admin', MAALY_PAY_PLUGIN_URL . 'assets/js/admin.js', ['jquery'], MAALY_PAY_VERSION, true);
     }
 });
+
+function maaly_pay_enqueue_frontend_styles()
+{
+    wp_enqueue_style('maaly-pay-frontend-style', MAALY_PAY_PLUGIN_URL . 'assets/css/frontend.css', [], MAALY_PAY_VERSION);
+}
+add_action('wp_enqueue_scripts', 'maaly_pay_enqueue_frontend_styles');

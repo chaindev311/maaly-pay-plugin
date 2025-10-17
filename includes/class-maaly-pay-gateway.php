@@ -11,7 +11,6 @@ class WC_Gateway_Maaly_Pay extends WC_Payment_Gateway
 {
     public function __construct()
     {
-        error_log('>>> Maaly Pay: Constructor loaded');
         $this->id = 'maaly_pay';
         $this->icon = MAALY_PAY_PLUGIN_URL . 'assets/images/maaly-icon.png';
         $this->has_fields = false;
@@ -23,22 +22,24 @@ class WC_Gateway_Maaly_Pay extends WC_Payment_Gateway
 
         $this->title = $this->get_option('title', __('Maaly Pay', 'maaly-pay'));
         $this->description = $this->get_option('description', __('Pay with Maaly Pay', 'maaly-pay'));
-        $this->enabled = $this->get_option('enabled', 'no');
+        $this->enabled = $this->get_option('enabled', 'yes');
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
     }
 
     public function is_available()
     {
-        error_log('>>> Maaly Pay: is_available() called, enabled=' . $this->enabled);
-
         if ($this->enabled !== 'yes') {
             return false;
         }
 
-        // ✅ Ignore shipping requirements for Maaly Pay
-        if (WC()->cart && WC()->cart->needs_shipping() && empty(WC()->shipping()->get_packages())) {
-            error_log('>>> Maaly Pay: overriding shipping check - still available');
-            return true;
+        // Check if WooCommerce is available
+        if (!WC() || !WC()->cart) {
+            return false;
+        }
+
+        // Check if cart needs payment
+        if (!WC()->cart->needs_payment()) {
+            return false;
         }
 
         return true;
@@ -51,7 +52,7 @@ class WC_Gateway_Maaly_Pay extends WC_Payment_Gateway
                 'title' => __('Enable/Disable', 'maaly-pay'),
                 'type' => 'checkbox',
                 'label' => __('Enable Maaly Pay', 'maaly-pay'),
-                'default' => 'no',
+                'default' => 'yes',
             ],
             'title' => [
                 'title' => __('Title', 'maaly-pay'),
@@ -76,7 +77,6 @@ class WC_Gateway_Maaly_Pay extends WC_Payment_Gateway
         $amount = $order->get_total();
         $merchantTxId = 'order-' . $order_id . '-' . time();
         $callback_url = add_query_arg('wc-api', 'maaly_pay_callback', home_url('/'));
-        error_log('>>>>>>>>>>>>>>>>>>>>> 1111 ' . $amount . $currency . $merchantId);
 
         if (empty($api_key) || empty($merchantId)) {
             wc_add_notice(__('Payment error: API key or Merchant ID not configured.', 'maaly-pay'), 'error');

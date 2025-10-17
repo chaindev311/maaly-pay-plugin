@@ -38,84 +38,72 @@ require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-frontend.php';
 // Initialize frontend
 Maaly_Pay_Frontend::init();
 
-// Debug: Check if payment method is being rendered
-add_action('woocommerce_checkout_process', function () {
-    error_log('Maaly Debug: Checkout process started');
-    $available_gateways = WC()->payment_gateways()->get_available_payment_gateways();
-    error_log('Maaly Debug: Available gateways during checkout: ' . print_r(array_keys($available_gateways), true));
+// Fix checkout page template issues
+add_action('template_redirect', function () {
+    if (is_checkout() && !is_admin()) {
+        // Ensure WooCommerce checkout template is loaded
+        if (!function_exists('woocommerce_checkout')) {
+            return;
+        }
 
-    if (isset($available_gateways['maaly_pay'])) {
-        error_log('Maaly Debug: Maaly Pay gateway is available during checkout');
-    } else {
-        error_log('Maaly Debug: Maaly Pay gateway is NOT available during checkout');
-    }
-});
-
-// Debug: Check if we're on checkout page
-add_action('wp', function () {
-    if (is_checkout()) {
-        error_log('Maaly Debug: On checkout page');
-    }
-});
-
-// Debug: Check payment methods right before display
-add_action('woocommerce_review_order_before_payment', function () {
-    error_log('Maaly Debug: Before payment methods display');
-    $available_gateways = WC()->payment_gateways()->get_available_payment_gateways();
-    error_log('Maaly Debug: Available gateways before display: ' . print_r(array_keys($available_gateways), true));
-
-    // Check if Maaly Pay is in the list
-    foreach ($available_gateways as $id => $gateway) {
-        if ($id === 'maaly_pay') {
-            error_log('Maaly Debug: Found Maaly Pay gateway: ' . get_class($gateway));
-            error_log('Maaly Debug: Gateway enabled: ' . $gateway->enabled);
-            error_log('Maaly Debug: Gateway title: ' . $gateway->title);
-            error_log('Maaly Debug: Gateway description: ' . $gateway->description);
+        // Force load WooCommerce checkout scripts and styles
+        if (function_exists('wc_enqueue_js')) {
+            wc_enqueue_js('
+                jQuery(document).ready(function($) {
+                    if (typeof wc_checkout_params !== "undefined") {
+                        $("body").trigger("update_checkout");
+                    }
+                });
+            ');
         }
     }
 });
 
-// Debug: Check if payment methods are being filtered
-add_filter('woocommerce_available_payment_gateways', function ($gateways) {
-    error_log('Maaly Debug: Filtering payment gateways - before: ' . print_r(array_keys($gateways), true));
+// Ensure checkout page has proper content
+add_action('wp', function () {
+    if (is_checkout() && !is_admin()) {
+        // Check if checkout page has content
+        global $post;
+        if ($post && (empty($post->post_content) || strpos($post->post_content, '[woocommerce_checkout]') === false)) {
+            // Add checkout shortcode if page is empty or doesn't have the shortcode
+            $post->post_content = '[woocommerce_checkout]';
+        }
+    }
+});
 
-    if (isset($gateways['maaly_pay'])) {
-        error_log('Maaly Debug: Maaly Pay is in filtered gateways');
-    } else {
-        error_log('Maaly Debug: Maaly Pay is NOT in filtered gateways');
+// Force display checkout form if theme doesn't support it
+add_action('woocommerce_before_checkout_form', function () {
+    if (is_checkout() && !is_admin()) {
+        // This ensures the checkout form is displayed even if theme doesn't support it properly
+        echo '<div id="woocommerce-checkout-wrapper">';
+    }
+});
+
+add_action('woocommerce_after_checkout_form', function () {
+    if (is_checkout() && !is_admin()) {
+        echo '</div>';
+    }
+});
+
+
+
+// Ensure Maaly Pay is not filtered out by other plugins
+add_filter('woocommerce_available_payment_gateways', function ($gateways) {
+    // Force include Maaly Pay if it exists
+    if (!isset($gateways['maaly_pay'])) {
+        // Try to get it from the payment gateways object
+        if (WC() && WC()->payment_gateways()) {
+            $all_gateways = WC()->payment_gateways()->payment_gateways();
+            if (isset($all_gateways['maaly_pay'])) {
+                $gateways['maaly_pay'] = $all_gateways['maaly_pay'];
+            }
+        }
     }
 
     return $gateways;
 }, 999);
 
-// Force display Maaly Pay if it's not showing
-add_action('woocommerce_checkout_before_customer_details', function () {
-    $available_gateways = WC()->payment_gateways()->get_available_payment_gateways();
-    if (isset($available_gateways['maaly_pay'])) {
-        echo '<div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc;">';
-        echo '<strong>DEBUG: Maaly Pay gateway is available but might not be displaying properly.</strong>';
-        echo '<br>Gateway ID: ' . $available_gateways['maaly_pay']->id;
-        echo '<br>Gateway Title: ' . $available_gateways['maaly_pay']->title;
-        echo '<br>Gateway Description: ' . $available_gateways['maaly_pay']->description;
-        echo '</div>';
-    }
-});
 
-// Force display payment method manually
-add_action('woocommerce_review_order_before_payment', function () {
-    $available_gateways = WC()->payment_gateways()->get_available_payment_gateways();
-    if (isset($available_gateways['maaly_pay'])) {
-        $gateway = $available_gateways['maaly_pay'];
-        echo '<div style="background: #e7f3ff; padding: 15px; margin: 10px 0; border: 2px solid #0073aa; border-radius: 5px;">';
-        echo '<h3 style="margin: 0 0 10px 0; color: #0073aa;">' . esc_html($gateway->title) . '</h3>';
-        echo '<p style="margin: 0 0 10px 0;">' . esc_html($gateway->description) . '</p>';
-        echo '<label style="display: block; cursor: pointer;">';
-        echo '<input type="radio" name="payment_method" value="maaly_pay" style="margin-right: 8px;">';
-        echo 'Pay with ' . esc_html($gateway->title);
-        echo '</label>';
-        echo '</div>';
-    }
-});
 
 // -----------------------------------------------------------------------------
 // ADMIN ASSETS
@@ -131,9 +119,6 @@ add_action('before_woocommerce_init', function () {
     }
 });
 
-add_action('woocommerce_init', function () {
-    error_log('>>> WooCommerce initialized, checking Maaly Pay gateway class: ' . (class_exists('WC_Gateway_Maaly_Pay') ? 'YES' : 'NO'));
-});
 
 add_action('admin_enqueue_scripts', function ($hook) {
     $screen = function_exists('get_current_screen') ? get_current_screen() : null;
@@ -167,18 +152,29 @@ add_action('woocommerce_loaded', 'maaly_pay_init_gateway', 0);
 
 function maaly_pay_init_gateway()
 {
+    static $initialized = false;
+
+    if ($initialized) {
+        return;
+    }
+
     if (!class_exists('WC_Payment_Gateway')) {
         return;
     }
 
     require_once MAALY_PAY_PLUGIN_DIR . 'includes/class-maaly-pay-gateway.php';
-
     add_filter('woocommerce_payment_gateways', 'maaly_pay_add_gateway_class');
+
+    $initialized = true;
 }
 
 function maaly_pay_add_gateway_class($gateways)
 {
-    $gateways[] = 'WC_Gateway_Maaly_Pay';
+    // Only add if not already present
+    if (!isset($gateways['maaly_pay'])) {
+        $gateways['maaly_pay'] = 'WC_Gateway_Maaly_Pay';
+    }
+
     return $gateways;
 }
 
@@ -244,79 +240,3 @@ add_action('woocommerce_api_maaly_pay_callback', function () {
     echo 'OK';
     exit;
 });
-
-// Diagnostic: log checkout environment & payment gateways
-add_action('template_redirect', function () {
-    if (! function_exists('is_checkout') || ! is_checkout()) {
-        return;
-    }
-
-    // Force logging for debugging
-    if (true) {
-        // Optional: force logging even if WP_DEBUG is off (remove in production)
-    }
-
-    // Ensure WooCommerce cart is available
-    if (! WC()->cart) {
-        error_log('Maaly Debug: WC()->cart is null');
-        return;
-    }
-
-    $cart_total = WC()->cart->get_total('edit'); // formatted
-    $cart_total_raw = WC()->cart->get_total(''); // sometimes formatted; include raw
-    $needs_payment = WC()->cart->needs_payment();
-    $requires_shipping = WC()->cart->needs_shipping();
-    $shipping_packages = WC()->shipping()->get_packages();
-    $customer = WC()->customer ? json_encode(array(
-        'country' => WC()->customer->get_country(),
-        'state' => WC()->customer->get_state(),
-        'postcode' => WC()->customer->get_postcode(),
-    )) : 'no customer object';
-
-    // Get available payment gateways (the internal list used by checkout)
-    $available = array();
-    if (class_exists('WC_Payment_Gateways')) {
-        $gateways_obj = WC()->payment_gateways();
-        $all = $gateways_obj->payment_gateways();
-        $avail = $gateways_obj->get_available_payment_gateways();
-        foreach ($all as $id => $gw) {
-            $available[] = array(
-                'id' => $id,
-                'class' => is_object($gw) ? get_class($gw) : '',
-                'enabled' => property_exists($gw, 'enabled') ? $gw->enabled : null,
-                'is_available_result' => method_exists($gw, 'is_available') ? (string) $gw->is_available() : 'n/a',
-            );
-        }
-    }
-
-    error_log(
-        'Maaly Debug: checkout env -> cart_total=' . print_r($cart_total, true)
-            . ' | needs_payment=' . ($needs_payment ? 'yes' : 'no')
-            . ' | requires_shipping=' . ($requires_shipping ? 'yes' : 'no')
-            . ' | customer=' . $customer
-            . ' | shipping_packages_count=' . count($shipping_packages)
-    );
-
-    error_log('Maaly Debug: all gateways -> ' . print_r($available, true));
-
-    // Also log what get_available_payment_gateways() returns
-    if (isset($avail)) {
-        $avail_ids = array_keys($avail);
-        error_log('Maaly Debug: get_available_payment_gateways() => ' . implode(', ', $avail_ids));
-    } else {
-        error_log('Maaly Debug: get_available_payment_gateways() not available');
-    }
-}, 5);
-
-
-// -----------------------------------------------------------------------------
-// OPTIONAL DEBUG INFO (enable for testing)
-// -----------------------------------------------------------------------------
-// add_action('admin_notices', function () {
-//     if (!current_user_can('manage_options')) return;
-//     $msgs = [];
-//     $msgs[] = 'Maaly Pay debug: WooCommerce active? ' . (class_exists('WooCommerce') ? 'YES' : 'NO');
-//     $msgs[] = 'WC_Payment_Gateway exists? ' . (class_exists('WC_Payment_Gateway') ? 'YES' : 'NO');
-//     $msgs[] = 'Maaly gateway class loaded? ' . (class_exists('WC_Gateway_Maaly_Pay') ? 'YES' : 'NO');
-//     echo '<div class="notice notice-info"><p><strong>' . implode('</strong><br><strong>', array_map('esc_html', $msgs)) . '</strong></p></div>';
-// });
